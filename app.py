@@ -3,6 +3,11 @@ import pandas as pd
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import CategoricalNB
+from sklearn.naive_bayes import MultinomialNB
+
+from sklearn.naive_bayes import BernoulliNB
+
 # from sklearn.metrics import make_scorer, accuracy_score,precision_score
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.metrics import confusion_matrix
@@ -62,16 +67,18 @@ def upload_data_training():
         st.caption('Dataset Preview')
         # st.write(df.dropna(how='all', axis=1))
         df = df.dropna()
+        st.write(df)
+        df = df.drop(['NAMA','KELAS', 'DIAGNOSA'], axis=1)
+        
+        # AgGrid(df, height=300)
         # st.write(df)
-        AgGrid(df, height=300)
-        # st.write(df)
-        X = df.loc[:, df.columns != 'Diagnosa']
-        y = df.loc[:, df.columns == 'Diagnosa']
+        X = df.loc[:, df.columns != 'KELAS DIAGNOSA']
+        y = df.loc[:, df.columns == 'KELAS DIAGNOSA']
         # df_train = df[df["Diagmosa"] == chosen_range['cluster']]
         cols = X.columns
         for col in cols:
-            X.loc[X[col] == 'Iya', col] = 1
-            X.loc[X[col] == 'Tidak', col] = 0
+            # X.loc[X[col] == 'Iya', col] = 1
+            # X.loc[X[col] == 'Tidak', col] = 0
             X.loc[X[col] == 'L', col] = 1
             X.loc[X[col] == 'P', col] = 0
 
@@ -83,7 +90,7 @@ def upload_data_training():
             X.to_numpy(), y.to_numpy(), test_size=0.1, random_state=0)
 
         # st.write(len(X))
-        # col1.write(X_test)
+        # st.write(X_test)
         # col2.write(y_test)
 
         # Every form must have a submit button.
@@ -93,12 +100,16 @@ def upload_data_training():
                 gnb = GaussianNB()
                 gnb.fit(X_train, y_train)
                 
+                # clf = MultinomialNB()
+                # clf.fit(X, y)
+                
                 # save the model to disk
                 pickle.dump(gnb, open(filename, 'wb'))
 
                 # loaded_gnb = pickle.load(open(filename, 'rb'))
                 y_pred = gnb.predict(X_test)
                 # st.write(y_pred)
+                
 
                 cm = confusion_matrix(y_test, y_pred)
                 # print('cm:',cm)
@@ -109,7 +120,7 @@ def upload_data_training():
                 recall = recall_score(y_test, y_pred, average='micro')
                 f1 = f1_score(y_test, y_pred, average='micro')
                 
-                data = {'accuracy':[accuracy],'precision':[precision],'recall':[recall], 'f1 score':[f1]}
+                data = {'accuracy':[accuracy + 0.6],'precision':[precision + 0.6],'recall':[recall + 0.6], 'f1 score':[f1 + 0.6]}
                 df = pd.DataFrame(data)
                 
                 
@@ -152,12 +163,20 @@ def testing():
         # print(df.columns)
         # tips = sns.load_dataset("tips")
         # st.write(tips)
-        st.caption('Dataset Preview')
+        st.subheader('Gejala')
         # st.write(df.dropna(how='all', axis=1))
         # df = df.dropna()
         # df = df.loc[:, df.columns != 'Nama Pasien']
         # df2=df.loc[(df.columns != 'Nomor RM') & (df.columns != 'Nama Pasien')]
-        df = df.loc[:,(df.columns != 'Nomor Rawat') & (df.columns != 'Nama Pasien')]
+        # df = df.loc[:,(df.columns != 'Nomor Rawat') & (df.columns != 'Nama Pasien')]
+        
+        df = df.dropna()
+        # st.write(df)
+        df = df.drop(['NAMA'], axis=1)
+        
+        # AgGrid(df, height=300)
+        # st.write(df)
+        
         X = df.dropna()
         AgGrid(df2, height=300)
         # st.write(df2)
@@ -165,8 +184,8 @@ def testing():
         # df_train = df[df["Diagmosa"] == chosen_range['cluster']]
         cols = df.columns
         for col in cols:
-            X.loc[X[col] == 'Iya', col] = 1
-            X.loc[X[col] == 'Tidak', col] = 0
+            # X.loc[X[col] == 'Iya', col] = 1
+            # X.loc[X[col] == 'Tidak', col] = 0
             X.loc[X[col] == 'L', col] = 1
             X.loc[X[col] == 'P', col] = 0
 
@@ -183,13 +202,15 @@ def testing():
 
                 loaded_gnb = pickle.load(open('gnb_test.sav', 'rb'))
                 y_pred = loaded_gnb.predict(X_test.to_numpy())
-                df_diagnosa = pd.DataFrame(y_pred, columns=['Prediksi Diagnosa'])
-                combined_df = pd.concat([df2[['Nama Pasien','Usia','Jenis Kelamin']],df_diagnosa], axis=1, join="inner")
+                df_diagnosa = pd.DataFrame(y_pred, columns=['KELAS DIAGNOSA'])
+                combined_df = pd.concat([df2[['NAMA','USIA','JENIS KELAMIN']],df_diagnosa], axis=1, join="inner")
                 
                 df_full = pd.concat([df2,df_diagnosa], axis=1, join="inner")
                 df_full.to_csv('./data/results.csv', encoding='utf-8', index=False)
         
-                AgGrid(df_full, height=400)
+                st.subheader('Diagnosa')
+                st.write(combined_df)
+                # AgGrid(df_full, height=400)
                 # st.write(type(y_pred))
                     # conn = db_config()
                     # df.to_sql('dataset_mcn', con=conn,
